@@ -527,7 +527,7 @@ class Game:
         pygame.display.flip()
 
     def reset_game(self):
-        self.pacman.position = (1, 1)
+        self.pacman.position = (1, self.maze.height - 2)
         self.ghosts[0].position = (self.maze.width - 2, 1)  # Blue
         self.ghosts[1].position = (self.maze.width - 2, 1)  # Pink
         self.ghosts[2].position = (self.maze.width - 2, 1)  # Orange
