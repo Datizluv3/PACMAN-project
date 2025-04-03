@@ -79,7 +79,7 @@ class Ghost(Character):
             "memory_usage": 0,
             "nodes_expanded": 0
         }
-
+        self.last_target_position = None  # Track the last target position
     def find_path(self, maze, target_position):
         # 4 ghost classes will implement this method
         # This is a placeholder for the actual pathfinding algorithm
@@ -95,7 +95,9 @@ class Ghost(Character):
         return False
 
     def update_path(self, maze, target_position):
-        self.find_path(maze, target_position)
+        if target_position != self.last_target_position:
+            self.last_target_position = target_position
+            self.find_path(maze, target_position)
 
 
 class BlueGhost(Ghost):
@@ -103,6 +105,7 @@ class BlueGhost(Ghost):
         super().__init__(position, BLUE, "Blue (BFS)")
 
     def find_path(self, maze, target_position):
+
         start_time = time.time()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
@@ -357,10 +360,9 @@ class Game:
                 elif keys[pygame.K_RIGHT]:
                     move_made = self.pacman.move((1, 0), self.maze)
                 
-            # # If pacman moved, update ghost paths
-            # if self.user_controlled and self.parallel_execution:
-            #     for ghost in self.ghosts:
-            #         ghost.update_path(self.maze, self.pacman.position)
+            if self.user_controlled:
+                for ghost in self.ghosts:
+                    ghost.update_path(self.maze, self.pacman.position)
 
 
 
@@ -369,9 +371,7 @@ class Game:
         if self.ghost_move_counter >= self.ghost_speed:
             self.ghost_move_counter = 0
                         # If pacman moved, update ghost paths
-            if self.user_controlled and self.parallel_execution:
-                for ghost in self.ghosts:
-                    ghost.update_path(self.maze, self.pacman.position)
+            
 
             if self.level == 1:
                 active_ghost = self.ghosts[0]  # Blue Ghost
