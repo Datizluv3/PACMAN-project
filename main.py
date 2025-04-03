@@ -273,8 +273,8 @@ class Game:
         self.parallel_execution = False
         self.pacman_move_counter = 0
         self.ghost_move_counter = 0
-        self.pacman_speed = 10  # Pac-Man moves every 10 frame
-        self.ghost_speed = 20  # Ghosts move every 30 frames
+        self.pacman_speed = 5  # Pac-Man moves every 10 frame
+        self.ghost_speed = 10  # Ghosts move every 30 frames
         self.init_pygame()
 
     def init_pygame(self):
@@ -484,7 +484,7 @@ class Game:
         if self.level <= 4:
             metrics_text = (
                 f"Search Time: {active_ghost.metrics['search_time']:.6f} sec | "
-                f"Memory: {active_ghost.metrics['memory_usage'] / 1024:.2f} KB | "
+                f"Memory: {active_ghost.metrics['memory_usage'] / 1024:.6f} KB | "
                 f"Nodes: {active_ghost.metrics['nodes_expanded']}"
             )
             metrics_surface = self.font.render(metrics_text, True, WHITE)
@@ -511,12 +511,22 @@ class Game:
             overlay.fill(BLACK)
             self.screen.blit(overlay, (0, 0))
             
-            game_over_text = self.title_font.render("GAME OVER", True, RED)
-            text_rect = game_over_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 20))
-            self.screen.blit(game_over_text, text_rect)
+            for i, ghost in enumerate(self.ghosts):
+                metrics_text = (
+                    f"{ghost.name}: Time: {ghost.metrics['search_time']:.6f} sec | "
+                    f"Memory: {ghost.metrics['memory_usage'] / 1024:.2f} KB | "
+                    f"Nodes: {ghost.metrics['nodes_expanded']}"
+                )
+                metrics_surface = self.big_font.render(metrics_text, True, ghost.color)
+                metrics_rec = metrics_surface.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 40))
+                self.screen.blit(metrics_surface, (metrics_rec.x, metrics_rec.y + i * 20))
+                
+            #result_text = self.title_font.render("GAME OVER", True, RED)
+            #text_rect = result_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 20))
+            #self.screen.blit(result_text, text_rect)
             
             restart_text = self.big_font.render("Press R to Restart", True, WHITE)
-            restart_rect = restart_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 + 20))
+            restart_rect = restart_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 + 40))
             self.screen.blit(restart_text, restart_rect)
 
     def draw(self):
