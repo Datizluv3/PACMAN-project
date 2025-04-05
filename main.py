@@ -1,5 +1,7 @@
 import pygame
 import time
+from timeit import default_timer as timer
+
 import heapq
 import math
 import sys
@@ -106,7 +108,7 @@ class BlueGhost(Ghost):
 
     def find_path(self, maze, target_position):
 
-        start_time = time.time()
+        start_time = timer()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
@@ -128,7 +130,7 @@ class BlueGhost(Ghost):
                     visited.add(next_pos)
                     queue.append((next_pos, path + [next_pos]))
 
-        search_time = time.time() - start_time
+        search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
 
         self.metrics = {
@@ -144,7 +146,7 @@ class PinkGhost(Ghost):
         super().__init__(position, PINK, "Pink (DFS)")
 
     def find_path(self, maze, target_position):
-        start_time = time.time()
+        start_time = timer()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
@@ -166,7 +168,7 @@ class PinkGhost(Ghost):
                     visited.add(next_pos)
                     queue.append((next_pos, path + [next_pos]))
 
-        search_time = time.time() - start_time
+        search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
 
         self.metrics = {
@@ -182,7 +184,7 @@ class OrangeGhost(Ghost):
         super().__init__(position, ORANGE, "Orange (UCS)")
 
     def find_path(self, maze, target_position):
-        start_time = time.time()
+        start_time = timer()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
@@ -204,7 +206,7 @@ class OrangeGhost(Ghost):
                     visited.add(next_pos)
                     queue.append((next_pos, path + [next_pos]))
 
-        search_time = time.time() - start_time
+        search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
 
         self.metrics = {
@@ -220,7 +222,7 @@ class RedGhost(Ghost):
         super().__init__(position, RED, "Red (A*)")
 
     def find_path(self, maze, target_position):
-        start_time = time.time()
+        start_time = timer()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
@@ -242,7 +244,7 @@ class RedGhost(Ghost):
                     visited.add(next_pos)
                     queue.append((next_pos, path + [next_pos]))
 
-        search_time = time.time() - start_time
+        search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
 
         self.metrics = {
@@ -260,9 +262,9 @@ class Game:
         self.screen_height = self.maze.height * CELL_SIZE + 100  # Extra space for metrics
         self.pacman = PacMan((1, self.maze.height - 2))
         self.ghosts = [
-            BlueGhost((self.maze.width - 2, 1)),
-            PinkGhost((self.maze.width - 2, 1)),
-            OrangeGhost((self.maze.width - 2, 1)),
+            BlueGhost((self.maze.width - 2, 4)),
+            PinkGhost((self.maze.width - 2, 3)),
+            OrangeGhost((self.maze.width - 2, 2)),
             RedGhost((self.maze.width - 2, 1))
         ]
         self.user_controlled = user_controlled
@@ -367,11 +369,9 @@ class Game:
 
 
 
-        # Move ghosts less frequently
+        # Move ghosts 
         if self.ghost_move_counter >= self.ghost_speed:
-            self.ghost_move_counter = 0
-                        # If pacman moved, update ghost paths
-            
+            self.ghost_move_counter = 0          
 
             if self.level == 1:
                 active_ghost = self.ghosts[0]  # Blue Ghost
@@ -391,9 +391,8 @@ class Game:
                 active_ghost.move(self.maze)
             elif self.level >= 5:  # Parallel execution for levels 5 and 6
                 # Update paths for all ghosts if not user-controlled
-                if not self.user_controlled:
-                    for ghost in self.ghosts:
-                        ghost.update_path(self.maze, self.pacman.position)
+                for ghost in self.ghosts:
+                    ghost.update_path(self.maze, self.pacman.position)
 
                 # Move all ghosts
                 for i, ghost in enumerate(self.ghosts):
@@ -403,8 +402,8 @@ class Game:
                     # Check for collisions with other ghosts
                     for j, other_ghost in enumerate(self.ghosts):
                         if i != j and ghost.position == other_ghost.position:
-                            ghost.position = old_position  # Revert move if collision
-
+                            ghost.position = ghost.previous_position  # Revert move if collision
+                            ghost.path.insert(0,ghost.previous_position)  # Add old position back to path
     def draw_maze(self):
         self.screen.fill(BLACK)
         
@@ -483,7 +482,7 @@ class Game:
         # Draw metrics for appropriate ghost(s)
         if self.level <= 4:
             metrics_text = (
-                f"Search Time: {active_ghost.metrics['search_time']:.6f} sec | "
+                f"Search Time: {active_ghost.metrics['search_time']:.7f} sec | "
                 f"Memory: {active_ghost.metrics['memory_usage'] / 1024:.6f} KB | "
                 f"Nodes: {active_ghost.metrics['nodes_expanded']}"
             )
@@ -492,9 +491,10 @@ class Game:
         elif self.level >= 5:
             for i, ghost in enumerate(self.ghosts):
                 metrics_text = (
-                    f"{ghost.name}: Time: {ghost.metrics['search_time']:.6f} sec | "
+                    f"{ghost.name}: Time: {ghost.metrics['search_time']:.7f} sec | "
                     f"Memory: {ghost.metrics['memory_usage'] / 1024:.2f} KB | "
                     f"Nodes: {ghost.metrics['nodes_expanded']}"
+                    f"Position: {ghost.position}"
                 )
                 metrics_surface = self.font.render(metrics_text, True, ghost.color)
                 self.screen.blit(metrics_surface, (10, y_offset + 30 + i * 15))
@@ -538,10 +538,12 @@ class Game:
 
     def reset_game(self):
         self.pacman.position = (1, self.maze.height - 2)
-        self.ghosts[0].position = (self.maze.width - 2, 1)  # Blue
-        self.ghosts[1].position = (self.maze.width - 2, 1)  # Pink
-        self.ghosts[2].position = (self.maze.width - 2, 1)  # Orange
+        self.ghosts[0].position = (self.maze.width - 2, 4)  # Blue
+        self.ghosts[1].position = (self.maze.width - 2, 3)  # Pink
+        self.ghosts[2].position = (self.maze.width - 2, 2)  # Orange
         self.ghosts[3].position = (self.maze.width - 2, 1)  # Red
+        for ghost in self.ghosts:
+            ghost.last_target_position = None  # Reset last target position
         
         for ghost in self.ghosts:
             ghost.path = []
@@ -577,7 +579,7 @@ def create_maze_layout(width, height):
 
 def main():
     # Create a maze layout
-    maze_layout = create_maze_layout(28, 31)
+    maze_layout = create_maze_layout(32, 28)
     
     # Create and run the game
     game = Game(maze_layout)
