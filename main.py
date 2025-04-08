@@ -188,23 +188,28 @@ class OrangeGhost(Ghost):
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
-        # BFS implementation
-        queue = deque([(self.position, [])])  # (position, path)
-        visited = {self.position}
+        # UCS implementation
+        frontier = []
+        heapq.heappush(frontier, (0, self.position, []))  # (cost, position, path)
+        visited = set()
         nodes_expanded = 0
 
-        while queue:
-            current_pos, path = queue.popleft()
+        while frontier:
+            cost, current_pos, path = heapq.heappop(frontier)
             nodes_expanded += 1
 
             if current_pos == target_position:
                 self.path = path
                 break
 
-            for next_pos in maze.get_neighbors(current_pos):
-                if next_pos not in visited:
-                    visited.add(next_pos)
-                    queue.append((next_pos, path + [next_pos]))
+            if current_pos in visited:
+                continue
+            visited.add(current_pos)
+
+            for neighbor in maze.get_neighbors(current_pos):
+                if neighbor not in visited:
+                    new_cost = cost + 1
+                    heapq.heappush(frontier, (new_cost, neighbor, path + [neighbor]))
 
         search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
