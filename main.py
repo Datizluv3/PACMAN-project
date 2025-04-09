@@ -226,30 +226,45 @@ class RedGhost(Ghost):
     def __init__(self, position):
         super().__init__(position, RED, "Red (A*)")
 
+    def heuristic(self, a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
     def find_path(self, maze, target_position):
-        start_time = timer()
+        start_time = time.time()
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
-        # BFS implementation
-        queue = deque([(self.position, [])])  # (position, path)
-        visited = {self.position}
+        open_list = []
+        heapq.heappush(open_list, (0, self.position, []))
+        came_from = {}
+        g_score = {self.position: 0}
+        f_score = {self.position: self.heuristic(self.position, target_position)}
+        visited = set()
         nodes_expanded = 0
 
-        while queue:
-            current_pos, path = queue.popleft()
+        while open_list:
+            _, current_pos, path = heapq.heappop(open_list)
             nodes_expanded += 1
+
+            if current_pos in visited:
+                continue
+
+            visited.add(current_pos)
 
             if current_pos == target_position:
                 self.path = path
                 break
 
-            for next_pos in maze.get_neighbors(current_pos):
-                if next_pos not in visited:
-                    visited.add(next_pos)
-                    queue.append((next_pos, path + [next_pos]))
+            for neighbor in maze.get_neighbors(current_pos):
+                tentative_g_score = g_score[current_pos] + 1
 
-        search_time = timer() - start_time
+                if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                    came_from[neighbor] = current_pos
+                    g_score[neighbor] = tentative_g_score
+                    f_score[neighbor] = tentative_g_score + self.heuristic(neighbor, target_position)
+                    heapq.heappush(open_list, (f_score[neighbor], neighbor, path + [neighbor]))
+
+        search_time = time.time() - start_time
         memory_used = process.memory_info().rss - memory_before
 
         self.metrics = {
