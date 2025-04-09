@@ -150,23 +150,23 @@ class PinkGhost(Ghost):
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
-        # BFS implementation
-        queue = deque([(self.position, [])])  # (position, path)
+        # DFS implementation
+        stack = [(self.position, [])]  # (position, path)
         visited = {self.position}
         nodes_expanded = 0
 
-        while queue:
-            current_pos, path = queue.popleft()
+        while stack:
+            current_pos, path = stack.pop()
             nodes_expanded += 1
 
             if current_pos == target_position:
                 self.path = path
                 break
 
-            for next_pos in maze.get_neighbors(current_pos):
+            for next_pos in reversed(maze.get_neighbors(current_pos)):  # reversed để thứ tự gần giống BFS
                 if next_pos not in visited:
                     visited.add(next_pos)
-                    queue.append((next_pos, path + [next_pos]))
+                    stack.append((next_pos, path + [next_pos]))
 
         search_time = timer() - start_time
         memory_used = process.memory_info().rss - memory_before
@@ -177,6 +177,7 @@ class PinkGhost(Ghost):
             "nodes_expanded": nodes_expanded
         }
         return self.metrics
+
 
 
 class OrangeGhost(Ghost):
