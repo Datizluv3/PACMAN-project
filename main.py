@@ -261,7 +261,7 @@ class RedGhost(Ghost):
 
 
 class Game:
-    def __init__(self, maze_layout, user_controlled=False):
+    def __init__(self, maze_layout, user_controlled=True):
         self.maze = Maze(maze_layout)
         self.screen_width = self.maze.width * CELL_SIZE
         self.screen_height = self.maze.height * CELL_SIZE + 100  # Extra space for metrics
@@ -273,6 +273,7 @@ class Game:
             RedGhost((self.maze.width - 2, 1))
         ]
         self.user_controlled = user_controlled
+        self.ghost_move = False
         self.clock = pygame.time.Clock()
         self.running = True
         self.game_over = False
@@ -292,7 +293,7 @@ class Game:
         pygame.display.set_caption("Pac-Man Search Algorithms")
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.font = pygame.font.SysFont("Arial", 10)
-        self.big_font = pygame.font.SysFont("Arial", 24)
+        self.big_font = pygame.font.SysFont("Arial", 20)
         self.title_font = pygame.font.SysFont("Arial", 36)
 
     def handle_events(self):
@@ -307,33 +308,42 @@ class Game:
                 elif event.key == pygame.K_1:
                     self.level = 1
                     self.parallel_execution = False
-                    self.user_controlled = False
+                    self.user_controlled = True
+                    self.ghost_move = False
                     self.reset_game()
                 elif event.key == pygame.K_2:
                     self.level = 2
                     self.parallel_execution = False
-                    self.user_controlled = False
+                    self.user_controlled = True
+                    self.ghost_move = False
                     self.reset_game()
                 elif event.key == pygame.K_3:
                     self.level = 3
                     self.parallel_execution = False
-                    self.user_controlled = False
+                    self.user_controlled = True
+                    self.ghost_move = False
                     self.reset_game()
                 elif event.key == pygame.K_4:
                     self.level = 4
                     self.parallel_execution = False
-                    self.user_controlled = False
+                    self.user_controlled = True
+                    self.ghost_move = False
                     self.reset_game()
                 elif event.key == pygame.K_5:
                     self.level = 5
                     self.parallel_execution = True
-                    self.user_controlled = False
+                    self.user_controlled = True
+                    self.ghost_move = False
                     self.reset_game()
                 elif event.key == pygame.K_6:
                     self.level = 6
                     self.parallel_execution = True
-                    self.user_controlled = True
+                    self.user_controlled = False
+                    self.ghost_move = False
                     self.reset_game()
+                elif event.key == pygame.K_RETURN:
+                    self.user_controlled = not self.user_controlled
+                    self.ghost_move = not self.ghost_move
 
 
     def update(self):
@@ -375,7 +385,7 @@ class Game:
 
 
         # Move ghosts 
-        if self.ghost_move_counter >= self.ghost_speed:
+        if self.ghost_move_counter >= self.ghost_speed and self.ghost_move:
             self.ghost_move_counter = 0          
 
             if self.level == 1:
@@ -505,7 +515,7 @@ class Game:
                 self.screen.blit(metrics_surface, (10, y_offset + 30 + i * 15))
 
         # Draw controls info
-        controls_text = "Controls: 1-6 - Change Level | Enter - Start | R - Reset | ESC - Quit | Arrow Keys - Move Pac-Man (Level 6)"
+        controls_text = "Controls: 1-6 - Change Level | Enter - Start/Pause | R - Reset | ESC - Quit | Arrow Keys - Move Pac-Man (Level 6)"
         controls_surface = self.font.render(controls_text, True, GREEN)
         self.screen.blit(controls_surface, (10, y_offset + 70))
 
