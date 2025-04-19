@@ -15,7 +15,7 @@ creating a challenging and engaging experience.
 In this project, students will program the ghosts to chase Pac-Man using search algorithms.
 The objective is to implement different path finding strategies and then analyze their effectiveness.
 Each ghost is programmed with a search algorithm, including: **(1) BFS (Breadth-First Search)**,
-**(2) DFS (Depth-First Search)**, **(3) UCS (Uniform-Cost Search)**, and **(4) A* (A-Star Search)**;
+**(2) DFS (Depth-First Search)**, **(3) UCS (Uniform-Cost Search)**, and **(4) ** **A* (A-Star Search)**;
 then evaluated based on performance metrics such as (1) search time, (2) memory usage, and
 (3) number of expanded nodes
 
