@@ -9,8 +9,9 @@ import os
 import psutil
 from collections import deque
 import csv
+import random
 
-map_path ='pacman_map.csv'
+map_path ='pacman_map1.csv'
 
 # Colors
 BLACK = (0, 0, 0)
@@ -47,6 +48,8 @@ class Maze:
             next_x, next_y = x + dx, y + dy
             if self.is_valid_position((next_x, next_y)):
                 neighbors.append((next_x, next_y))
+        # Get neighbors in a random order
+        random.shuffle(neighbors)
         return neighbors
 
 
