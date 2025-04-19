@@ -6,7 +6,7 @@ import heapq
 import math
 import sys
 import os
-import psutil
+import tracemalloc
 from collections import deque
 import csv
 import random
@@ -112,8 +112,7 @@ class BlueGhost(Ghost):
     def find_path(self, maze, target_position):
 
         start_time = timer()
-        process = psutil.Process(os.getpid())
-        memory_before = process.memory_info().rss
+        tracemalloc.start()  # Start memory tracking
 
         # BFS implementation
         queue = deque([(self.position, [])])  # (position, path)
@@ -134,11 +133,12 @@ class BlueGhost(Ghost):
                     queue.append((next_pos, path + [next_pos]))
 
         search_time = timer() - start_time
-        memory_used = process.memory_info().rss - memory_before
+        current, peak = tracemalloc.get_traced_memory()  # Get memory usage
+        tracemalloc.stop()  # Stop memory tracking
 
         self.metrics = {
             "search_time": search_time,
-            "memory_usage": memory_used,
+            "memory_usage": peak / 1024,  # Convert to KB
             "nodes_expanded": nodes_expanded
         }
         return self.metrics
@@ -150,8 +150,7 @@ class PinkGhost(Ghost):
 
     def find_path(self, maze, target_position):
         start_time = timer()
-        process = psutil.Process(os.getpid())
-        memory_before = process.memory_info().rss
+        tracemalloc.start()  # Start memory tracking
 
         # DFS implementation
         stack = [(self.position, [])]  # (position, path)
@@ -172,11 +171,12 @@ class PinkGhost(Ghost):
                     stack.append((next_pos, path + [next_pos]))
 
         search_time = timer() - start_time
-        memory_used = process.memory_info().rss - memory_before
+        current, peak = tracemalloc.get_traced_memory()  # Get memory usage
+        tracemalloc.stop()  # Stop memory tracking
 
         self.metrics = {
             "search_time": search_time,
-            "memory_usage": memory_used,
+            "memory_usage": peak / 1024,  # Convert to KB
             "nodes_expanded": nodes_expanded
         }
         return self.metrics
@@ -189,8 +189,7 @@ class OrangeGhost(Ghost):
 
     def find_path(self, maze, target_position):
         start_time = timer()
-        process = psutil.Process(os.getpid())
-        memory_before = process.memory_info().rss
+        tracemalloc.start()  # Start memory tracking
 
         # UCS implementation
         frontier = []
@@ -216,11 +215,12 @@ class OrangeGhost(Ghost):
                     heapq.heappush(frontier, (new_cost, neighbor, path + [neighbor]))
 
         search_time = timer() - start_time
-        memory_used = process.memory_info().rss - memory_before
+        current, peak = tracemalloc.get_traced_memory()  # Get memory usage
+        tracemalloc.stop()  # Stop memory tracking
 
         self.metrics = {
             "search_time": search_time,
-            "memory_usage": memory_used,
+            "memory_usage": peak / 1024,  # Convert to KB
             "nodes_expanded": nodes_expanded
         }
         return self.metrics
@@ -235,8 +235,7 @@ class RedGhost(Ghost):
 
     def find_path(self, maze, target_position):
         start_time = time.time()
-        process = psutil.Process(os.getpid())
-        memory_before = process.memory_info().rss
+        tracemalloc.start()  # Start memory tracking
 
         open_list = []
         heapq.heappush(open_list, (0, self.position, []))
@@ -269,11 +268,12 @@ class RedGhost(Ghost):
                     heapq.heappush(open_list, (f_score[neighbor], neighbor, path + [neighbor]))
 
         search_time = time.time() - start_time
-        memory_used = process.memory_info().rss - memory_before
+        current, peak = tracemalloc.get_traced_memory()  # Get memory usage
+        tracemalloc.stop()  # Stop memory tracking
 
         self.metrics = {
             "search_time": search_time,
-            "memory_usage": memory_used,
+            "memory_usage": peak / 1024,  # Convert to KB
             "nodes_expanded": nodes_expanded
         }
         return self.metrics
@@ -517,7 +517,7 @@ class Game:
         if self.level <= 4:
             metrics_text = (
                 f"Search Time: {active_ghost.metrics['search_time']:.7f} sec | "
-                f"Memory: {active_ghost.metrics['memory_usage'] / 1024:.6f} KB | "
+                f"Memory: {active_ghost.metrics['memory_usage']:.6f} KB | "
                 f"Nodes: {active_ghost.metrics['nodes_expanded']}"
             )
             metrics_surface = self.font.render(metrics_text, True, WHITE)
@@ -526,7 +526,7 @@ class Game:
             for i, ghost in enumerate(self.ghosts):
                 metrics_text = (
                     f"{ghost.name}: Time: {ghost.metrics['search_time']:.7f} sec | "
-                    f"Memory: {ghost.metrics['memory_usage'] / 1024:.2f} KB | "
+                    f"Memory: {ghost.metrics['memory_usage']:.2f} KB | "
                     f"Nodes: {ghost.metrics['nodes_expanded']}"
                     f"Position: {ghost.position}"
                 )
@@ -536,7 +536,7 @@ class Game:
         # Draw controls info
         controls_text = "Controls: 1-6 - Change Level | Enter - Start/Pause | R - Reset | ESC - Quit | Arrow Keys - Move Pac-Man (Level 6)"
         controls_surface = self.font.render(controls_text, True, GREEN)
-        self.screen.blit(controls_surface, (10, y_offset + 70))
+        self.screen.blit(controls_surface, (10, y_offset-10))
 
     def draw_game_over(self):
         if self.game_over:
@@ -548,7 +548,7 @@ class Game:
             for i, ghost in enumerate(self.ghosts):
                 metrics_text = (
                     f"{ghost.name}: Time: {ghost.metrics['search_time']:.6f} sec | "
-                    f"Memory: {ghost.metrics['memory_usage'] / 1024:.2f} KB | "
+                    f"Memory: {ghost.metrics['memory_usage']:.2f} KB | "
                     f"Nodes: {ghost.metrics['nodes_expanded']}"
                 )
                 metrics_surface = self.big_font.render(metrics_text, True, ghost.color)
